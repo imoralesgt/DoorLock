@@ -1,12 +1,13 @@
 #include <DYE_Fingerprint.h>
 #include <SoftwareSerial.h>
+#include "fingerprint.h" 
 
 /*
  * I/O definitions
  */
-//Fingerprint software serial interface
-#define TOUCH_RX 2 //Green wire
-#define TOUCH_TX 3 //White wire
+
+//#define TOUCH_RX 2 //Green wire
+//#define TOUCH_TX 3 //White wire
 
 
 
@@ -24,6 +25,18 @@ SoftwareSerial mySerial(TOUCH_RX, TOUCH_TX);
 DYE_Fingerprint finger = DYE_Fingerprint(&mySerial);
 
 
+/*
+ * Prototypes
+ */
+//Moved prototypes to header file "fingerprint.h" 
+
+
+
+uint8_t initFingerprint(void){
+  if(finger.verifyPassword())
+    return FINGERPRINT_OK;
+  return -1;
+}
 
 
 void setup() {
@@ -36,33 +49,43 @@ void setup() {
   //Fingerprint sensor init
   finger.begin(57600);
 
-  if (finger.verifyPassword()) {
+  if(initFingerprint() != FINGERPRINT_OK){
     #ifdef DEBUG
-    Serial.println("Found fingerprint sensor!");
+      Serial.println("Fingerprint sensor not found!");
     #endif
-  } else {
-    #ifdef DEBUG
-    Serial.println("Did not find fingerprint sensor :(");
-    #endif
-    
-    while (1) { delay(1); }
+    return -1;
   }
   #ifdef DEBUG
-  Serial.println("Waiting for valid finger...");
+    Serial.println("Found fingerprint sensor!");
+    Serial.println("Waiting for valid finger...");
   #endif
 
 }
 
+
+
+//TODO Start optimizing code below this line ----------------- 
+
 void loop() {
-  uint8_t p = finger.getImage();
+  uint8_t p = finger.getImage();  
   if(p != FINGERPRINT_OK) return -1;
+
+  #ifdef DEBUG
+    Serial.println(p);
+    Serial.println("Image read");
+  #endif
 
   p = finger.image2Tz();
   if(p != FINGERPRINT_OK) return -1;
 
+  #ifdef DEBUG
+    Serial.println("Image to fingerprint data");
+  #endif
+
   p = finger.fingerFastSearch();
   if(p != FINGERPRINT_OK){
     #ifdef DEBUG
+      Serial.println(p);
       Serial.println("Fingerprint not found!");
     #endif
     return -1;
